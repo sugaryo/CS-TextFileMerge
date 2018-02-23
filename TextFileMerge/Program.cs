@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ArgsAnalyzer;
+
 
 namespace TextFileMerge
 {
@@ -25,8 +27,10 @@ namespace TextFileMerge
 
 		private static void Execute( string[] args )
 		{
-			var files = args
-				.AsEnumerable()
+			var arguments = args.parse();
+
+			var files = arguments
+				.AsParameters()
 				.Select( x => new FileInfo(x) )
 				.Where( file => file.Exists )
 				.ToList();
@@ -42,12 +46,17 @@ namespace TextFileMerge
 			string name = Console.ReadLine();
 
 			if ( name == "exit" ) return;
-			
+
 			string timestamp = DateTime.Now.ToString("yyyy-MMdd-HHmmss");
 			string path = $"{name}.archived.{timestamp}.txt";
 
+			Compress( files, path );
+		}
 
 
+		#region Compress
+		private static void Compress( List<FileInfo> files, string path )
+		{
 			// 取り敢えず最低限、重複排除するだけで実装。
 			HashSet<string> unique = new HashSet<string>();
 
@@ -66,8 +75,7 @@ namespace TextFileMerge
 					}
 				}
 			}
-			
-			
 		}
+		#endregion
 	}
 }
