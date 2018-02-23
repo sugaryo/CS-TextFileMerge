@@ -29,11 +29,22 @@ namespace TextFileMerge
 		{
 			var arguments = args.parse();
 
+			// パラメータからファイルパスを引っこ抜く。
 			var files = arguments
 				.AsParameters()
 				.Select( x => new FileInfo(x) )
 				.Where( file => file.Exists )
 				.ToList();
+
+			// archiveオプションを取得。
+			var a = arguments
+				.AsPropertyOptions()
+				.Where( x => x.Name == "a"
+						  || x.Name == "acv"
+						  || x.Name == "arc"
+						  || x.Name == "archive" )
+				.FirstOrDefault();
+
 
 			if ( 0 == files.Count )
 			{
@@ -41,22 +52,36 @@ namespace TextFileMerge
 				return;
 			}
 
-			// アーカイブファイル名をコンソールから入力する事にした。
-			Console.Write( "input archive-filename:" );
-			string name = Console.ReadLine();
 
-			if ( name == "exit" ) return;
+			// アーカイブファイル名がオプションで指定されなかった場合は
+			// コンソール入力からアーカイブファイル名を指定する。
+			if ( null == a )
+			{
+				Console.Write( "input archive-filename:" );
+				string name = Console.ReadLine();
+
+				if ( name == "exit" ) return;
+				
+				Compress( files, name );
+			}
+			// アーカイブファイル名が指定された場合はそのまま使う。
+			else
+			{
+				string name = a.value;
+
+				Compress( files, name );
+			}
+		}
+
+		#region Compress
+		private static void Compress( List<FileInfo> files, string name )
+		{
+#warning nameはPath::InvalidPathCharsエスケープするべきだけど、取り敢えず使うのは自分だからスルーしとく。
 
 			string timestamp = DateTime.Now.ToString("yyyy-MMdd-HHmmss");
 			string path = $"{name}.archived.{timestamp}.txt";
-
-			Compress( files, path );
-		}
-
-
-		#region Compress
-		private static void Compress( List<FileInfo> files, string path )
-		{
+			
+		
 			// 取り敢えず最低限、重複排除するだけで実装。
 			HashSet<string> unique = new HashSet<string>();
 
