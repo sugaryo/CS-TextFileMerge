@@ -37,6 +37,15 @@ namespace TextFileMerge
 				.Where ( x => x.Name == "auto" )
 				.FirstOrDefault();
 			
+			// deleteオプションを取得。
+			var del = arguments
+				.AsValueOptions()
+				.Where( x => x.Name == "delete"
+					      || x.Name == "del"
+						  || x.Name == "d" )
+				.FirstOrDefault();
+			bool delete = null != del;
+			
 			if ( null != auto )
 			{
 				// auto-compress mode では追加のオプションをチェック。
@@ -46,14 +55,6 @@ namespace TextFileMerge
 							  || x.Name == "s" )
 					.FirstOrDefault();
 				int size = int.Parse( s?.value ?? "10" );
-				
-				var del = arguments
-					.AsValueOptions()
-					.Where( x => x.Name == "delete"
-							  || x.Name == "del"
-							  || x.Name == "d" )
-					.FirstOrDefault();
-				bool delete = null != del;
 				
 				AutoCompress( size, delete );
 				return;
@@ -66,6 +67,13 @@ namespace TextFileMerge
 				.Select( x => new FileInfo(x) )
 				.Where( file => file.Exists )
 				.ToList();
+			
+			if ( 0 == files.Count )
+			{
+				Console.WriteLine( "ファイルが１個もドロップされてねーずら。" );
+				return;
+			}
+
 
 			// archiveオプションを取得。
 			var a = arguments
@@ -76,12 +84,12 @@ namespace TextFileMerge
 						  || x.Name == "archive" )
 				.FirstOrDefault();
 
-			
-			if ( 0 == files.Count )
-			{
-				Console.WriteLine( "ファイルが１個もドロップされてねーずら。" );
-				return;
-			}
+			// zipオプションを取得。
+			var z = arguments
+				.AsValueOptions()
+				.Where( x => x.Name == "z"
+						  || x.Name == "zip" )
+				.FirstOrDefault();
 
 
 			if ( null != a )
@@ -90,6 +98,11 @@ namespace TextFileMerge
 				string name = a.value;
 
 				Compress( files, name );
+
+				if ( null != z )
+				{
+					Zip( files, name, delete );
+				}
 			}
 			else
 			{
@@ -101,10 +114,17 @@ namespace TextFileMerge
 				if ( name == "exit" ) return;
 
 				Compress( files, name );
+				
+				if ( null != z )
+				{
+					Zip( files, name, delete );
+				}
 			}
+			
 		}
 
 
+		#region バッチ用 -auto オプション実装
 		private class GroupBy<TKey, TElement> 
 		{
 			private readonly Dictionary<TKey, List<TElement>> map = new Dictionary<TKey, List<TElement>>();
@@ -133,8 +153,7 @@ namespace TextFileMerge
 				}
 			}
 		}
-
-
+		
 		private static void AutoCompress( int size, bool delete )
 		{
 			string current = Environment.CurrentDirectory;
@@ -178,7 +197,10 @@ namespace TextFileMerge
 				}
 			}
 		}
-		
+		#endregion
+
+
+		#region ZIP
 		private static void Zip( List<FileInfo> files, string name, bool delete )
 		{
 			string timestamp = DateTime.Now.ToString("yyyy-MMdd-HHmmss");
@@ -210,6 +232,7 @@ namespace TextFileMerge
 				Console.WriteLine( "  >> deleted." );
 			}
 		}
+		#endregion
 
 
 		#region Compress
